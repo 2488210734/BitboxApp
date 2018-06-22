@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="css/icons-extra.css" />
+		<link href="css/hx.css" rel="stylesheet" />
+		<link href="css/offer.css" rel="stylesheet" />
+		<style>
+			.a {
+				display: flex;
+				padding: 50px 30px;
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+		<div class="a">
+			<button class="jian">-</button>
+			<input type="number" class="num" />
+			<button class="jia">+</button>
+		</div>
+
+		<script src="js/jquery.js"></script>
+
+		<script>
+			$(function() {
+
+				$("body").on('click', '.jian', function() {
+
+					var num = $(".num").val();
+					num = (parseFloat(num)*10000 - 1*10000)/10000;
+					$(".num").val(num);
+				});
+
+				$(".jia").click(function() {
+					var num = $(".num").val();
+					num = parseFloat(num) + 1;
+					$(".num").val(num);
+				});
+			})
+		</script>
+	</body>
+
+</html>
