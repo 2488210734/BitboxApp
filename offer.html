@@ -64,7 +64,7 @@
 							<label v-if="isbuy">可买 {{buyable}} {{selectbuy.code}}</label>
 
 							<label v-if="!isbuy">可用 {{formatenum(buybalance,2)}} {{selectbuy.code}}</label>
-							<label v-if="!isbuy">可卖 {{!!sellable ? sellable : 0}} {{selectsell.code}}</label>
+							<label v-if="!isbuy">可得 {{!!sellable ? sellable : 0}} {{selectsell.code}}</label>
 
 							<button type="button" class="mui-btn" :class="isbuy ? 'btngreen' : 'btnred'" id="offerbtn">
 								<span v-if="isbuy">买入 {{selectbuy.code}}</span>
@@ -380,7 +380,7 @@
 						})
 						.then(function(account) {
 							donext(account);
-						})
+						});
 
 					function donext(iaccount) {
 						debugger;
@@ -400,6 +400,8 @@
 							})
 							.catch(function(e) {
 								console.error(e);
+								console.log(JSON.stringify(e));
+								console.log(JSON.stringify(tx));
 								$("body").removeClass("lock");
 								mui.alert('提交失败，请稍后重试', '出错了~~', function() {});
 							});

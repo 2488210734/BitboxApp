@@ -83,7 +83,7 @@
 		<script src="js/hx.js"></script>
 		<script>
 			mui.plusReady(function() {
-				//$.checkuser();
+				$.checkuser();
 
 				var ts = this;
 				$.iaccount.getbalance()
@@ -136,7 +136,7 @@
 
 				function transfersubmit() {
 					$("body").addClass("lock");
-					StellarSdk.Network.usePublicNetwork();
+					
 					var server = new StellarSdk.Server($.apiaddress, {
 						allowHttp: true
 					});
@@ -154,6 +154,7 @@
 					server.loadAccount(sourcePublicKey) //请求返回资产
 						.catch(function(e) {
 							//console.log(JSON.stringify(e));
+							$("body").removeClass("lock");
 							console.error(e);
 						})
 						.then(function(account) {
@@ -184,7 +185,7 @@
 								console.error(e);
 
 								if(sendasset.code == "XLM") {
-									console.log("尝试激活账号...")
+									console.log("尝试激活账号...");
 									trycreataccount(); //转账为xlm且不成功时，尝试激活账号
 								} else {
 									$("body").removeClass("lock");
@@ -215,6 +216,7 @@
 								$("body").removeClass("lock");
 								mui.alert('转账并激活了对方账号', '操作成功', function() {});
 							}).catch(function(e) {
+								console.error(JSON.stringify(e));
 								$("body").removeClass("lock");
 								mui.alert('转账失败，请稍后重试！', '出错啦~~', function() {});
 							});

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+
+<body>
+
+<style type="text/css">
+	#app {
+		text-align: center;
+	}
+	
+	#skey,
+	#password {
+		width: 100%;
+		height: 220px;
+		max-width: 660px;
+		margin: 0 auto;
+	}
+	
+	input[type="text"] {
+		min-width: 300px;
+	}
+</style>
+<div id="app">
+	<label for="">你的私钥</label><br />
+	<input type="text" name="" id="mykey" value="SD2EPK3BKBDK2L2M2RQVBNVLLV4PU4JJGWLEGA37L26OTIH4YUO4DM5B" /><br />
+	<label for="">对方公钥</label><br />
+	<input type="text" name="" id="their_publickey" value="GCL46GH4JLKFRBC44OLBKMVDRXZGJRBXWMXRKJGJUM73GJAAPLKOMWB3" /><br />
+	<label for="">要加密的字符</label><br />
+	<input type="text" name="" id="message" value="" /><br />
+	<div style="padding: 15px 0; text-align: center;">
+		<button id="trans">加密</button>
+	</div>
+	<textarea id="password" name="" rows="" cols=""></textarea>
+	<span id="pass"></span>
+
+	<br /><br />
+	<label for="">解密：</label><br />
+	<label for="">发送方公钥</label><br />
+	<input type="text" name="" id="sendpublickey" value="GCAXH3HPNUREFCXAZ6XPK2OV65VWNHIABCSDUIWOVFQDP3TW6XGAQNDY" /><br />
+	<label for="">接收方私钥</label><br />
+	<input type="text" name="" id="receivekey" value="SCXDFIIZDP52WJD2A4CMGTE7VESRNSZHOW2IJQOK5EG7ENZ5YBG2VRSL" /><br />
+	<div style="padding: 15px 0; text-align: center;">
+		<button id="trans2">解密</button>
+	</div>
+	<label for="">解密结果</label><br />
+	<input type="text" name="" id="res" value="" /><br />
+</div>
+
+<script src="../libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="../js/gateways.js"></script>
+<script src="../js/jquery.js"></script>
+<script src="../js/mui.min.js"></script>
+<script src="../js/function.js"></script>
+<script src="../js/mui.enterfocus.js"></script>
+<script src="../js/sjcl.js"></script>
+<script src="../js/nacl.js"></script>
+<script src="../js/nacl-util.min.js"></script>
+<script src="../js/ed2curve.min.js"></script>
+<script src="../js/vue.js"></script>
+<script src="../js/hx.js"></script>
+
+<script type="text/javascript">
+	var timearr = new Uint8Array(24);
+	var time = Math.round(new Date().getTime()/1000).toString();
+	time = StellarSdk.Buffer(time);
+	
+	timearr.set(time);
+	console.log(timearr);
+	
+	$("#trans").click(function() {
+		var message = $("#message").val();
+		var mykey = $("#mykey").val()
+		var their_publickey = $("#their_publickey").val();
+		
+		var myDHSecretKey = secretTokeypair(mykey);
+		var theirDHPublicKey = publicTokeypair(their_publickey);		
+		message = nacl.util.decodeUTF8(message);
+		//console.log(nacl.sign.keyPair());
+		var encryptedMessage = nacl.box(message, timearr, theirDHPublicKey, myDHSecretKey);
+
+		
+		$("#pass").html(encryptedMessage.toString());
+		//$("#password").val(encryptedMessage.toString());
+		$("#password").val(encryptedMessage);
+		//console.log(new StellarSdk.Buffer(encryptedMessage, "base64"));
+	});
+
+	
+	$("#trans2").click(function() {
+		
+		var message = $("#password").val().split(",");
+		//var message = new StellarSdk.Buffer($("#password").val());
+		
+		message = new Uint8Array(message);
+		var decryptedMessage = nacl.box.open(message, timearr, publicTokeypair($("#sendpublickey").val()), secretTokeypair($("#receivekey").val()));
+		
+		var buff = StellarSdk.Buffer.from(decryptedMessage);
+		
+		$("#res").val(buff.toString());
+		
+	});
+	
+	
+	
+	function secretTokeypair(str){
+		var a = StellarSdk.StrKey.decodeEd25519SecretSeed(str);
+		var b = new Uint8Array(a);
+		var c = ed2curve.convertSecretKey(b);
+		//console.log(c);
+		return c;
+	}
+	
+	function publicTokeypair(str){
+		var a = StellarSdk.StrKey.decodeEd25519PublicKey(str);
+		var b = new Uint8Array(a);
+		var c = ed2curve.convertPublicKey(b);
+		//console.log(c);
+		return c;
+	}
+	
+	
+	$.get("https://bitbox.one:5555/app/deposit_assets?key=").then(function(rs){
+		console.log(rs);
+	})
+	
+</script>
+
+</body>
+
+</html>

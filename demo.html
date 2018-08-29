@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<script src="jquery.js"></script>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+	/*模拟提交*/
+	$(function() {
+		var _post = {};
+		_post.key = "GCL46GH4JLKFRBC44OLBKMVDRXZGJRBXWMXRKJGJUM73GJAAPLKOMWB3";
+		_post.buyAssetType = "BCNY";
+		_post.buyAssetAmount = Math.random() * 1000;
+		_post.sellAssetType = "RMB";
+		_post.sellAssetAmount = _post.buyAssetAmount;
+		_post.depositType = "money";
+		_post.csId = 2;
+		_post.payeeAccount = "AAABBB";
+		_post.time = "5485658852";
+		console.log(JSON.stringify(_post));
+
+
+		$.post("https://bitbox.one:5555/app/deposit_create_order", _post).then(function(x) {
+			console.log(x);
+		}).catch(function(err) {
+			console.error(JSON.stringify(err));
+		});
+	})
+</script>
+
+</html>

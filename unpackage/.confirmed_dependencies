@@ -8,7 +8,12 @@
       "accountlist.html",
       "accounttransfer.html",
       "effects.html",
-      "recharge.html"
+      "recharge.html",
+      "recharge_add.html",
+      "withdraw.html",
+      "reg.html",
+      "reg_waiting.html",
+      "withdraw_add.html"
     ],
     "resources": [
       "css/mui.min.css",
@@ -331,7 +336,8 @@
       "setting.html",
       "buy.html",
       "addasset.html",
-      "offer.html"
+      "offer.html",
+      "active.html"
     ]
   },
   "offer.html": {
@@ -398,5 +404,34 @@
     ],
     "refer": [],
     "priority": 0
+  },
+  "recharge_add.html": {
+    "refer": [
+      "recharge_content.html",
+      "recharge_list.html"
+    ]
+  },
+  "recharge_list.html": {
+    "refer": [
+      "recharge_add.html",
+      "recharge_content.html"
+    ]
+  },
+  "withdraw_add.html": {
+    "refer": [
+      "bank_list.html",
+      "recharge_list.html",
+      "withdraw_list.html"
+    ]
+  },
+  "bank_list.html": {
+    "refer": [
+      "bank_add.html"
+    ]
+  },
+  "withdraw_list.html": {
+    "refer": [
+      "withdraw_content.html"
+    ]
   }
 }

@@ -26375,6 +26375,7 @@ var StellarSdk =
 	exports.verify = _signing.verify;
 	exports.FastSigning = _signing.FastSigning;
 	exports.Keypair = __webpack_require__(289).Keypair;
+  exports.Buffer = __webpack_require__(170).Buffer;//add by handsome
 
 	var _jsXdr = __webpack_require__(239);
 

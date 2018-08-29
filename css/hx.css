@@ -32,6 +32,12 @@ body {
 .red {
 	color: #CF2D28;
 }
+.btngreen{
+	background: #228B22; color: #fff; border: 1px solid #228B22;
+}
+.green{
+	color: #228B22;
+}
 
 .waiting {
 	position: fixed;

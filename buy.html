@@ -165,7 +165,7 @@
 					<label>购买币种</label>
 					<select id="targetprice" :class="{inputwaiting:iaccount.length<1}" v-model="selecttargetprice">
 						<option value="0">请选择购买币种</option>
-						<option :value="item.code+','+item.issuer" v-for="item in iaccount">{{item.code}} <span> ({{item.website}})</option>
+						<option :value="item.code+','+item.issuer" v-for="item in iaccount">{{item.code}}<span> ({{item.website}})</option>
 					</select>
 				</div>
 				
