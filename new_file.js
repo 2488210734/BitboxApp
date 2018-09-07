@@ -1,0 +1,53 @@
+[{
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "725417931",
+	"__callbacks__": {},
+	"__callback_id__": "plus41529723300069",
+	"id": "HBuilder"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow71529719943110",
+	"__callbacks__": {},
+	"__callback_id__": "plus61529723301887",
+	"id": "main.html"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow51529719943582",
+	"__callbacks__": {},
+	"__callback_id__": "plus81529723301887",
+	"id": "buy.html"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow71529719943583",
+	"__callbacks__": {},
+	"__callback_id__": "plus101529723301888",
+	"id": "accountlist.html"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow91529719943584",
+	"__callbacks__": {},
+	"__callback_id__": "plus121529723301888",
+	"id": "setting.html"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow31529719943581",
+	"__callbacks__": {},
+	"__callback_id__": "plus141529723301889",
+	"id": "price.html"
+}, {
+	"__view_array__": [],
+	"__IDENTITY__": "NWindow",
+	"__uuid__": "NWindow201529723282230",
+	"__callbacks__": {
+		"back": [null],
+		"menu": [null]
+	},
+	"__callback_id__": "plus21529723300040",
+	"id": "addasset.html"
+}] at addasset.html: 351

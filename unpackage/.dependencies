@@ -1,0 +1,62 @@
+{
+  "offer.html": {
+    "href": "offer.html",
+    "resources": [],
+    "priority": 1
+  },
+  "buy.html": {
+    "href": "buy.html",
+    "resources": [],
+    "refer": [],
+    "priority": 1
+  },
+  "addasset.html": {
+    "href": "addasset.html",
+    "resources": [],
+    "priority": 2
+  },
+  "price.html": {
+    "href": "price.html",
+    "resources": [],
+    "refer": [],
+    "priority": 2
+  },
+  "recharge.html": {
+    "href": "recharge.html",
+    "resources": [],
+    "priority": 3
+  },
+  "accounttransfer.html": {
+    "href": "accounttransfer.html",
+    "resources": [],
+    "priority": 4
+  },
+  "effects.html": {
+    "href": "effects.html",
+    "resources": [],
+    "priority": 5
+  },
+  "accountlist.html": {
+    "href": "accountlist.html",
+    "resources": [],
+    "refer": [],
+    "priority": 3
+  },
+  "setting.html": {
+    "href": "setting.html",
+    "resources": [],
+    "priority": 4
+  },
+  "main.html": {
+    "href": "main.html",
+    "resources": [],
+    "refer": [],
+    "priority": 1
+  },
+  "login.html": {
+    "href": "login.html",
+    "resources": [],
+    "refer": [],
+    "priority": 0
+  }
+}

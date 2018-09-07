@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>添加银行卡</title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {}
+		
+		.ptitle {
+			padding: 20px 15px 0;
+		}
+		
+		.submit_btn {
+			margin-top: 30px
+		}
+		
+		.mui-btn-block {
+			padding: 8px 0
+		}
+		
+		.submit_btn .btngreen {
+			opacity: .2;
+		}
+		
+		.submit_btn .enable {
+			opacity: 1;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">添加银行卡</h1>
+	</header>
+
+	<div class="mui-content">
+		<p class="ptitle">请绑定持卡人本人的银行卡</p>
+
+		<ul class="mui-table-view">
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>持卡人<span class="red">*</span></label>
+					<input type="text" v-model="bank_people" readonly="readonly" />
+				</div>
+			</li>
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>开户行<span class="red">*</span></label>
+					<input type="text" placeholder="请输入开户银行" v-model="bank_name" />
+				</div>
+			</li>
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>卡号<span class="red">*</span></label>
+					<input type="number" placeholder="请输入银行卡卡号" v-model="bank_no" />
+				</div>
+			</li>
+
+		</ul>
+
+		<div class="mui-content-padded submit_btn">
+			<button type="button" @tap="add_submit()" class="mui-btn mui-btn-primary mui-btn-block btngreen" :class="{enable:bank_useable}">保存</button>
+		</div>
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				bank_people: '',
+				bank_useable: false,
+				bank_name: '',
+				bank_no: ''
+			},
+			created: function() {
+				this.get_account();
+			},
+			methods: {
+				get_account: function() {
+					var ts = this;
+					bb.isuser().then(function(rs) {
+						//console.log(JSON.stringify(rs));
+						ts.bank_people = rs.surname + rs.firstname;
+					})
+				},
+				see_submit: function() {
+					var ts = this;
+					if(ts.bank_name && !isNaN(parseInt(ts.bank_no)) && ts.bank_no.length > 11) {
+						ts.bank_useable = true;
+					} else {
+						ts.bank_useable = false;
+					}
+				},
+				add_submit: function() {
+					var ts = this;
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						accountType: 'money',
+						payeeBankInfo: ts.bank_name,
+						payeeOwner: ts.bank_people,
+						payeeAccount: ts.bank_no
+					}
+
+					if(ts.bank_useable) {
+						var wt=plus.nativeUI.showWaiting();
+						bb.api_get_data("register_account", _obj, 'post').then(function(rs) {
+							wt.close();
+							if(rs && rs.result == true) {
+								var ws = mui.currentWebview.opener();
+								mui.fire(ws, 'reload', {});
+
+								ts.bank_people = '';
+								ts.bank_useable = false;
+								ts.bank_name = '';
+								ts.bank_no = '';
+
+								mui.back();
+							}
+						}).catch(function(e) {
+							console.error(e);
+							wt.close();
+						})
+					}
+				}
+			},
+			watch: {
+				bank_name: {
+					handler: function(val, oldval) {
+						this.see_submit();
+					}
+				},
+				bank_no: {
+					handler: function(val, oldval) {
+						this.see_submit();
+					}
+				}
+
+			},
+			computed: {
+
+			}
+		});
+
+	});
+</script>
+</body>
+
+</html>

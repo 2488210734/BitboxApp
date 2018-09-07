@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>充值</title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {
+			background: #fff;
+		}
+		
+		.submit_btn {
+			padding-top: 15px;
+		}
+		
+		.chk_history {
+			text-align: right;
+			padding: 30px 5px 15px;
+		}
+		
+		.payfor .mui-input-row>span {
+			padding: 11px 0;
+			display: block;
+		}
+		
+		.submit_btn .btngreen {
+			opacity: .2;
+		}
+		
+		.submit_btn .enable {
+			opacity: 1;
+		}
+		
+		select {
+			/*-webkit-appearance:button-bevel*/
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">充值</h1>
+	</header>
+
+	<div class="mui-content" v-cloak>
+		<ul class="mui-table-view">
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>充值货币</label>
+					<select name="" id="depositAssets" v-model="selectedAsset">
+						<option value="-1">请选择货币</option>
+						<option :value="index" v-for="(item,index) in assetarr">{{item.deposit_asset}}</option>
+					</select>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>客服</label>
+					<select name="" id="cslist" v-model="selectedCs">
+						<option value="-1">请选择客服</option>
+						<option :value="item" v-for="(item,index) in nowcslist.csList_authentic">{{item.csName}}</option>
+					</select>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>数量</label>
+					<input type="text" placeholder="请输入充值数量" v-model="amount">
+				</div>
+			</li>
+			<li class="mui-table-view-cell payfor">
+				<div class="mui-input-row">
+					<label>需要支付</label>
+					<span v-html="payfor">{{payfor}}</span>
+				</div>
+			</li>
+		</ul>
+
+		<div class="mui-content-padded submit_btn">
+			<button type="button" @tap="submit_deposit" class="mui-btn mui-btn-primary mui-btn-block btngreen" :class="{enable:!!amount && selectedCs != -1}">提交订单</button>
+		</div>
+
+		<div class="mui-content-padded chk_history">
+			<a _href="recharge_list.html">查询充值记录 ></a>
+		</div>
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+		
+		var detail_page = mui.preload({
+			url: "recharge_content.html"
+		});
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				assetarr: [], //充值货币下拉列表
+				selectedAsset: -1, //选中的货币下标
+				nowcslist: [], //当前货币的客服列表
+				selectedCs: -1, //选中的客服下标
+				amount: '',
+				deposit_amount: '',
+				payfor: ''
+			},
+			created: function() {
+				this.get_deposit_assets();
+
+			},
+			methods: {
+				get_deposit_assets: function() {
+					var ts = this;
+					ts.assetarr = []; //先清空下拉列表
+					var wt = plus.nativeUI.showWaiting();
+					var _obj={
+						key: $.getsourcePublicKey()
+					}
+					bb.api_get_data("deposit_assets", _obj).then(function(rs) {	
+						wt.close();
+						if(!!rs && !!rs.assets) {
+							/*verify_deposit_cs验证客服白名单*/
+							var _assetArr = bb.verify_deposit_cs(rs.assets);						
+							$.each(_assetArr, function(index, value) {
+								if(value.deposit_type == 'money') {
+									ts.assetarr.push(value);
+								}
+							});
+
+							console.log(JSON.stringify(ts.assetarr));	
+						}
+
+					}).catch(function(e) {
+						console.error(e);
+						wt.close();
+					})
+
+
+					/*$.get("test_api/deposit_assets.json").then(function(rs) {
+						if(!!rs && rs.status == 'ok') {
+							var _assetArr = rs.content;
+							$.each(_assetArr, function(index, value) {
+								console.log("检测第" + index + "个货币");
+								var _obj = value;
+								var _sign = _obj.cs.sign;
+								delete _obj.cs.sign;
+								var _str = $.param(_obj);
+
+								$.each(cslist, function(i, v) { //cslist是客服列表
+									var kp = "";
+									try { //避免公钥不合法时报错
+										kp = StellarSdk.Keypair.fromPublicKey(v);
+									} catch(e) {}
+
+									if(!!kp) {
+										console.log("用第 " + i + " 个公钥检测");
+
+										var _signBuffer = [];
+
+										try {
+											_signBuffer = new StellarSdk.Buffer(_sign, "base64");
+										} catch(e) {
+
+										}
+
+										if(!!_signBuffer && _signBuffer.length > 0) {
+											var isverify = kp.verify(_str, _signBuffer);
+											if(isverify) {
+												console.log("检测通过，前往下一个货币...");
+												ts.assetArr.push(value);
+												return false; //跳出循环
+											}
+										}
+
+									}
+
+								});
+							});
+							if(ts.assetArr.length < 1) {
+								ts.assetArr = [{
+									'deposit_assets': '当前没有可提现的货币'
+								}];
+							}
+							
+							ts.assetArr = _assetArr;//先加上这一句不检验签名，以后要重写
+						}
+					}).catch(function(e) {
+						ts.assetArr = [{
+							'deposit_assets': '当前没有可提现的货币'
+						}];
+						console.log(JSON.stringify(e));
+					});*/
+				},
+				test_sign: function() {
+					/*var ts = this;
+					var _obj = ts.assetArr[0].cs;
+					var _sign = _obj.sign;
+					delete _obj.sign;
+					var _str = $.param(_obj);
+
+
+					//var bf = Buffer.from(_sign, 'base64').toString('utf8');
+					//console.log(JSON.stringify(bf));
+
+					//var kp = StellarSdk.Keypair.fromPublicKey("GCL46GH4JLKFRBC44OLBKMVDRXZGJRBXWMXRKJGJUM73GJAAPLKOMWB3");
+					var kp = StellarSdk.Keypair.fromSecret("SBCTY625E74RQ32ND2P3LTKUNBICJ5RIVRN2VAFXYMECPYDZBWCX5ME2");
+					//var isver = kp.verify(_str,_sign);
+					console.log(kp.sign(_str).toString("base64"));*/
+				},
+				computerprice: function() {
+					var ts = this;
+					if(!!ts.amount && ts.selectedAsset > -1) {
+						var price = ts.assetarr[ts.selectedAsset].price;
+						var deposit_type = ts.assetarr[ts.selectedAsset].deposit_type == "money" ? "元人民币" : "";
+						ts.deposit_amount = (price * ts.amount);
+						ts.payfor = " <span class='red'> " + parseFloat(ts.deposit_amount).toFixed(2) + " </span> " + deposit_type;
+					} else {
+						ts.payfor = "";
+					}
+				},
+				submit_deposit: function() {
+					var ts = this;
+					if(!ts.amount || ts.selectedCs == -1) {
+						return true;
+					}
+					
+					var btnArray = ['否', '是'];
+					mui.confirm('确认提交此订单？', '', btnArray, function(e) {
+						if(e.index == 1) {
+							dosubmit99();
+						} else {
+
+						}
+					});
+
+					function dosubmit99() {
+
+						var kp = StellarSdk.Keypair.fromSecret($.getsecretonekey());
+						var post_data = {};
+						var curr_asset = ts.assetarr[ts.selectedAsset];
+						var random_str = randomNum(10000, 99999);
+						console.log(random_str);
+
+						post_data.key = kp.publicKey();
+						post_data.time = Math.round(new Date().getTime() / 1000).toString();
+						post_data.buyAsset = curr_asset.deposit_asset;
+						post_data.buyAssetAmount = ts.amount;
+						post_data.sellAsset = curr_asset.sell_asset;
+						post_data.sellAssetAmount = ts.deposit_amount;
+						post_data.depositType = curr_asset.deposit_type;
+						post_data.cs_key = ts.selectedCs.cs_key;
+						post_data.cs_memo = encrypt_str25519(random_str, post_data.time, post_data.cs_key, kp.secret());
+						//post_data.client_memo = encode64(sjcl.encrypt(random_str, kp.secret()));
+						post_data.client_memo = encrypt_str25519(random_str, post_data.time, kp.publicKey(), kp.secret());
+
+						console.log(JSON.stringify(post_data));
+						plus.nativeUI.showWaiting("正在提交到服务器...");
+						bb.api_get_data("deposit_create_order", post_data, "post").then(function(rs) {
+							plus.nativeUI.closeWaiting();
+							if(!!rs.orderNo) {
+								console.log(JSON.stringify(rs));
+								ts.amount = '';
+								
+								plus.webview.show(detail_page,"slide-in-bottom");					
+								var targetview = plus.webview.getWebviewById("recharge_content.html");					
+								mui.fire(targetview, 'get_data', { 'id': rs.orderNo });
+
+							}
+						})
+					}
+				}
+			},
+			watch: {
+				selectedAsset: {
+					handler: function(val, oldval) {
+						this.nowcslist = [];
+						if(val == -1) {
+							return true;
+						}
+						this.nowcslist = this.assetarr[val];
+						this.computerprice();
+					},
+					deep: true //对象内部的属性监听，也叫深度监听
+				},
+				selectedCs: {
+					handler: function(val, oldval) {
+						console.log(JSON.stringify(val));
+					}
+				},
+				amount: {
+					handler: function(val, oldval) {
+						this.computerprice();
+					}
+				}
+			}
+		});
+
+		mui.plusReady(function() {})
+
+		/*var keypair = StellarSdk.Keypair.fromSecret("SCXDFIIZDP52WJD2A4CMGTE7VESRNSZHOW2IJQOK5EG7ENZ5YBG2VRSL");
+		var _str = "csId=20&csName=%E6%9E%97%E5%B0%8F%E5%A6%B9&payeeAccountBank=%E5%BB%BA%E8%AE%BE%E9%93%B6%E8%A1%8C%E6%B7%B1%E5%9C%B3%E5%88%86%E8%A1%8C&payeeAccountNo=567433556778999&payeeAccountOwner=%E6%9E%97%E5%B0%8F%E5%A6%B9&payeeBankId=12";		
+		var signed = keypair.sign(_str);
+		console.log("签名后buffer:");
+		console.log(signed);
+		var basestr = signed.toString("base64");
+
+		console.log("签名后base64:"+basestr);
+		console.log("base64转化回buffer:");
+		console.log(new StellarSdk.Buffer(basestr,"base64"));
+				
+				
+		var kp = StellarSdk.Keypair.fromPublicKey("SCXDFIIZDP52WJD2A4CMGTE7VESRNSZHOW2IJQOK5EG7ENZ5YBG2VRS1");
+		var ist = kp.verify(_str,signed);
+				
+		console.log(ist);*/
+
+	});
+</script>
+</body>
+
+</html>

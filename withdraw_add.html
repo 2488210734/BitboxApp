@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>充值</title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {
+			background: #fff;
+		}
+		
+		.submit_btn {
+			/*padding-top: 15px;*/
+		}
+		
+		.chk_history {
+			text-align: right;
+			padding: 30px 5px 15px;
+		}
+		
+		.payfor .mui-input-row>span {
+			padding: 11px 0;
+			display: block;
+		}
+		
+		.payfor span em {
+			font-style: normal;
+			font-size: 13px;
+			color: #888;
+			display: inline-block;
+			margin-left: 5px;
+		}
+		
+		.payfor span em i {
+			font-style: normal;
+			color: #666;
+		}
+		
+		.bank_li {
+			padding: 15px;
+		}
+		
+		.mui-content .bank_li:after {
+			font-family: Muiicons;
+			font-size: inherit;
+			line-height: 1;
+			position: absolute;
+			top: 50%;
+			display: inline-block;
+			-webkit-transform: translateY(-50%);
+			transform: translateY(-50%);
+			text-decoration: none;
+			color: #bbb;
+			content: '\e583';
+			left: auto;
+			right: 15px;
+			height: 18px;
+			background: none;
+		}
+		
+		.bank_li span {
+			line-height: 1.3em;
+		}
+		
+		.bank_li span em {
+			display: block;
+			font-style: normal;
+		}
+		
+		.recharge_tip h4 {
+			text-align: center;
+			padding: 25px 15px;
+		}
+		
+		.submit_btn {
+			margin-top: 30px
+		}
+		
+		.mui-btn-block {
+			padding: 8px 0
+		}
+		
+		.submit_btn .btngreen {
+			opacity: .2;
+		}
+		
+		.submit_btn .enable {
+			opacity: 1;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">提现</h1>
+	</header>
+
+	<div class="mui-content">
+		<ul class="mui-table-view">
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>提现货币<span class="red">*</span></label>
+					<select name="" v-model="selectedAsset">
+						<option value="-1">请选择货币</option>
+						<option :value="index" v-for="(item,index) in assetarr">{{item.withdrawAsset}} (余额：{{item.balance}})</option>
+					</select>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>提现方式</label>
+					<input type="text" value="银行转账" readonly="readonly" />
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>提现金额<span class="red">*</span></label>
+					<input type="number" placeholder="请输入提现金额" v-model="amount">
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell payfor" v-cloak>
+				<div class="mui-input-row">
+					<label>实际到账</label>
+					<span v-show="withdraw_amount>0">{{buyAsset}}{{tofixed(withdraw_amount,2)}} <em>(手续费：<i>{{buyAsset}}{{tofixed(server_amount,2)}})</i></em></span>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell bank_li" v-cloak>
+				<a class="mui-input-row" _href="bank_list.html" v-if="bank_selected != -1">
+					<label>收款银行</label>
+					<span>
+						{{bank_selected.payeeBankInfo}} {{ bank_selected.payeeOwner }}
+						<em>{{bank_selected.payeeAccount}}</em>
+					</span>
+
+				</a>
+				<a class="mui-input-row" _href="bank_list.html" v-if="bank_selected == -1">
+					<label>收款银行</label>
+					<span>
+						<em style="padding-top:9px; color: #999;">请先添加收款银行</em>
+					</span>
+
+				</a>
+			</li>
+
+		</ul>
+
+		<div class="recharge_tip" v-show="!!amount && selectedAsset>=0" v-cloak>
+			<h4>您将支付 {{amount}} {{selectedAsset_obj.withdrawAsset}} <span v-show="!payable" class="red"> ( 余额不足！ )</span></h4>
+		</div>
+
+		<div class="mui-content-padded submit_btn">
+			<button type="button" @tap="submit_withdraw" class="mui-btn mui-btn-primary mui-btn-block btngreen" :class="{enable:payable}">提交订单</button>
+		</div>
+
+		<div class="mui-content-padded chk_history">
+			<a _href="withdraw_list.html">查询提现记录 ></a>
+		</div>
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/sha256.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+
+		var bank_page = mui.preload({
+			url: "bank_list.html"
+		});
+
+		/////////////
+		/*{"_type":"hash","_value":{"type":"Buffer","data":[193,5,12,61,154,219,175,155,3,136,147,14,69,219,175,253,147,217,107,236,28,47,141,90,178,27,201,236,102,56,157,141]}}*/
+		/*var _hasharr = [193,5,12,61,154,219,175,155,3,136,147,14,69,219,175,253,147,217,107,236,28,47,141,90,178,27,201,236,102,56,157,141];
+		
+		var memobf = new StellarSdk.Memo.hash("c1050c3d9adbaf9b0388930e45dbaffd93d96bec1c2f8d5ab21bc9ec66389d8d");
+		console.log(JSON.stringify(memobf));
+		console.log(JSON.stringify(new StellarSdk.Buffer("c1050c3d9adbaf9b0388930e45dbaffd93d96bec1c2f8d5ab21bc9ec66389d8d","hex")));
+		
+		var b64 = memobf._value.toString("base64");
+		console.log(b64);
+		
+		var newbf = new StellarSdk.Buffer(b64,"base64");
+		console.log(JSON.stringify(newbf));
+		
+		var newstr = newbf.toString("hex");
+		console.log(JSON.stringify(newstr));*/
+
+		window.addEventListener('selected_bank', function(e) {
+			vm.get_account(e.detail.bank_no);
+
+		}, false);
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				assetarr: [], //提现货币下拉列表
+				selectedAsset: -1, //选中的货币下标
+				selectedAsset_obj: {}, //选中的货币对象
+				withdrawType: 'money', //
+				amount: '',
+				withdraw_amount: '', //实际到账
+				server_amount: '', //手续费
+				buyAsset: '', //法币符号
+				payable: false, //余额是否足够
+				bank_list: [], //银行列表
+				bank_selected: -1,
+				bank_selectno: -1,
+				memo_obj: '',
+				memo_hash: '',
+				transactionHash: ''
+			},
+			created: function() {
+				this.get_withdraw_assets();
+				this.get_account();
+			},
+			methods: {
+				tofixed: function(m,n){
+					m = parseFloat(m);
+					return m.toFixed(n);
+				},
+				get_withdraw_assets: function() {
+					var ts = this;
+					ts.assetarr = []; //先清空下拉列表
+
+					var _obj = {
+						key: $.getsourcePublicKey()
+					}
+
+					var wt = plus.nativeUI.showWaiting();
+					$.when(bb.api_get_data("withdraw_assets", _obj), $.iaccount.getaccount()).then(function(rs, rs_hx) {
+
+						console.log(JSON.stringify(rs));
+						//console.log(JSON.stringify(rs_hx));
+						wt.close();
+						if(!!rs && !!rs_hx) {
+							var _assetArr = bb.verify_withdraw_cs(rs.assets);
+							/*
+							 * 这里要验证客服签名是否正确
+																	
+							*/
+							var _balance_arr = rs_hx.balances;
+							$.each(_assetArr, function(index, value) {
+								if(value.withdrawType == 'money') {
+									ts.assetarr.push(value);
+								}
+							});
+
+							$.each(ts.assetarr, function(index, value) {
+								ts.assetarr[index].balance = 0;
+								$.each(_balance_arr, function(i, v) { //获取余额
+									if(value.withdrawAsset == v.asset_code && value.withdrawAssetIssuer == v.asset_issuer) {
+										ts.assetarr[index].balance = v.balance;
+										return false;
+									}
+								});
+							});
+							//console.log(JSON.stringify(ts.assetarr));
+						}
+					}).catch(function(e) {
+						console.error(e);
+						wt.close();
+					});
+				},
+				get_account: function(bank_no) { //bank_no为选中的银行卡号，如不写则为第一个
+					var ts = this;
+					ts.bank_list = [];
+					bb.isuser().then(function(rs) {
+						//console.log(JSON.stringify(rs));
+						ts.bank_list = [];
+						if(rs && rs.bank_account_list) {
+							ts.bank_list = rs.bank_account_list.accounts;
+							//ts.bank_selected = ts.bank_list[0];
+
+							if(!!bank_no) {
+								ts.bank_selectno = bank_no;
+							} else if(ts.bank_selectno == -1) {
+								ts.bank_selectno = ts.bank_list[0].payeeAccount;
+								//console.log(JSON.stringify(ts.bank_selectno));
+							}
+						}
+
+					})
+				},
+				submit_withdraw: function() {
+					var ts = this;
+					if(!ts.payable) {
+						return true;
+					}
+
+					var btnArray = ['否', '是'];
+					mui.confirm('确认提交此订单？', '', btnArray, function(e) {
+						if(e.index == 1) {
+							ts.post_to_stellar();
+						} else {
+
+						}
+					});
+				},
+				price_computed: function() {
+					var ts = this;
+					if(ts.selectedAsset >= 0 && ts.amount > 0) {
+						ts.withdraw_amount = (parseFloat(ts.amount) * parseFloat(ts.assetarr[ts.selectedAsset].price)).toFixed(7);
+						ts.server_amount = (parseFloat(ts.amount) - ts.withdraw_amount).toFixed(7);
+						//console.log(parseFloat(ts.selectedAsset_obj));
+
+						parseFloat(ts.selectedAsset_obj.balance) > ts.amount ? ts.payable = true : ts.payable = false;
+					} else {
+						ts.payable = false;
+					}
+				},
+				post_to_stellar: function() {
+
+					var ts = this;
+					var kp = StellarSdk.Keypair.fromSecret($.getsecretonekey());
+					var sendasset = ts.selectedAsset_obj.withdrawAsset == "native" ? new StellarSdk.Asset.native() : new StellarSdk.Asset(ts.selectedAsset_obj.withdrawAsset, ts.selectedAsset_obj.withdrawAssetIssuer);
+					var op = StellarSdk.Operation.payment({
+						//MEMO_TEXT: $("#memo").val(),
+						destination: ts.selectedAsset_obj.withdrawAcount.toString(),
+						asset: sendasset,
+						amount: ts.amount.toString()
+					});
+					
+					//ts.memo_obj = '';
+					ts.memo_obj = {
+						buyAsset: ts.selectedAsset_obj.buyAsset,
+						buyAssetAmount: ts.withdraw_amount,
+						sellAsset: ts.selectedAsset_obj.withdrawAsset,
+						sellAssetAmount: ts.amount,
+						withdrawType: ts.selectedAsset_obj.withdrawType,
+						payeeBankInfo: ts.bank_selected.payeeBankInfo,
+						payeeOwner: ts.bank_selected.payeeOwner,
+						payeeAccount: ts.bank_selected.payeeAccount
+					}
+
+					var _memo_str = decodeURIComponent(objtosignstr(ts.memo_obj));
+					ts.memo_hash = hex_sha256(_memo_str);
+
+					var _memo = new StellarSdk.Memo.hash(ts.memo_hash);
+					console.log(JSON.stringify(_memo));
+
+					var wt = plus.nativeUI.showWaiting();
+					server.loadAccount(kp.publicKey()).catch(function(e) {
+						wt.close();
+						console.error(e);
+					}).then(function(iaccount) {
+
+						//转账操作
+						var tx = new StellarSdk.TransactionBuilder(iaccount).addMemo(_memo).addOperation(op).build();
+						tx.sign(kp);
+						server.submitTransaction(tx).then(function(txResult) {
+								wt.close();
+								console.log(JSON.stringify(txResult));
+								ts.transactionHash = txResult.hash;
+								ts.post_to_bitbox();
+							})
+							.catch(function(e) {
+								wt.close();
+								console.log(JSON.stringify(e));
+								console.error(e);
+
+								mui.alert('在转账 '+ts.selectedAsset_obj.withdrawAsset+' 资产时失败，请稍后重试或联络管理员。', '提现失败', function() {
+
+								});
+							});
+
+					});
+				},
+				post_to_bitbox: function(){ //提交到bitbox网络
+					
+					var ts = this;
+					var kp = StellarSdk.Keypair.fromSecret($.getsecretonekey());
+					var post_obj = ts.memo_obj;
+					post_obj.key = kp.publicKey();
+					post_obj.time = $.getnow();
+					post_obj.transactionHash = ts.transactionHash;
+					console.log(JSON.stringify(post_obj));
+					
+					var wt = plus.nativeUI.showWaiting("正在通知服务器");
+					bb.api_get_data("withdraw_create_order",post_obj,"post").then(function(rs){
+						wt.close();
+						if(rs.status=="ok"){
+							mui.alert('请等待工作人员为您处理。', '我们已收到您的提交', function() {
+								ts.amount='';
+							});
+						}else{
+							store_withdraw_err_order();
+						}
+					}).catch(function(e) {
+						wt.close();
+						store_withdraw_err_order();
+						console.error(e);
+					});
+					
+					function store_withdraw_err_order(){ //发生错误时，把错误信息记录在本地@@@@@
+						
+					}
+					
+					
+				}
+			},
+			watch: {
+
+				amount: {
+					handler: function(val, oldval) {
+						this.price_computed();
+					}
+				},
+				selectedAsset: {
+					handler: function(val, oldval) {
+						var ts = this;
+						//this.$set(ts.selectedAsset_obj, ts.assetarr[ts.selectedAsset]);
+						ts.selectedAsset_obj = ts.assetarr[ts.selectedAsset];
+						ts.selectedAsset_obj.buyAsset == "USD" ? ts.buyAsset = "$ " : '';
+						ts.selectedAsset_obj.buyAsset == "CNY" ? ts.buyAsset = "￥" : '';
+						this.price_computed();
+					}
+				},
+				bank_selectno: {
+
+					handler: function(val) {
+						if(val != '') {
+							var ts = this;
+							$.each(ts.bank_list, function(index, value) {
+								if(val === value.payeeAccount) {
+									ts.bank_selected = value;
+									//console.log(JSON.stringify(ts.bank_selected));
+								}
+							})
+						}
+					}
+
+				}
+			},
+			computed: {
+
+			}
+		});
+
+	});
+</script>
+</body>
+
+</html>

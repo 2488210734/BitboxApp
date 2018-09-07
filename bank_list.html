@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>管理银行卡</title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {}
+		.mui-bar-nav .edit{
+			font-size: 16px; padding-top:15px
+		}
+		
+		.mui-card-content {
+			padding: 20px 15px;
+			text-align: center;
+			font-size: 26px;
+		}
+		
+		.mui-card.jia .mui-card-content {
+			padding: 15px;
+			font-size: 18px;
+		}
+		
+		.jia .mui-icon-arrowright {
+			font-size: 18px;
+			color: #666;
+		}
+		
+		.jia {
+			margin-top: 25px;
+		}
+		.bank_list{
+			display: flex; 
+		}
+		.bank_c{
+			flex: 2;
+		}
+		.delbtn{
+			display: flex; align-items:center; justify-content:center; padding: 0 20px; text-align: center;
+			border-left: 1px solid #eee;
+		}
+		.delbtn button{
+			margin: 0 auto; background: #CF2D28; color: #fff; border: none;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<a class="mui-icon mui-pull-right edit" @tap="editable=!editable">编辑</a>
+		<h1 class="mui-title">管理银行卡</h1>
+	</header>
+
+	<div class="mui-content">
+		<div class="mui-card bank_list" v-for="(item,index) in bank_list">
+			<div class="bank_c" @tap="selected_bank(item.payeeAccount)">
+				<div class="mui-card-header"><span>{{item.payeeBankInfo}}</span><span>{{item.payeeOwner}}</span></div>
+				<div class="mui-card-content">{{item.payeeAccount}}</div>
+			</div>
+			<div class="delbtn" v-if="editable">
+				<button @tap="bank_del(item.payeeAccount)">删除</button>
+			</div>
+		</div>
+
+		<div class="mui-card jia">
+			<a class="mui-card-header" _href="bank_add.html">
+				<span><i class="mui-icon mui-icon-plusempty"></i> 添加银行卡</span>
+				<span><i class="mui-icon mui-icon-arrowright"></i></span>
+			</a>
+		</div>
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+
+		window.addEventListener('reload', function(e) {
+			vm.get_account();
+		}, false);
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				bank_list: [],
+				editable: false
+			},
+			created: function() {
+				this.get_account();
+			},
+			methods: {
+				get_account: function() {
+					var ts = this;
+					bb.isuser().then(function(rs) {
+						ts.bank_list = rs.bank_account_list.accounts;
+						//console.log(JSON.stringify(rs));
+					});
+				},
+				selected_bank: function(bank_no) {
+					var ws = mui.currentWebview.opener();
+					mui.fire(ws, 'selected_bank', { 'bank_no': bank_no });
+					mui.back();
+				},
+				bank_del: function(bank_no){
+					var ts = this;
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						payeeAccount: bank_no
+					}
+					console.log("正在删除");
+					if(ts.editable) {
+						var wt=plus.nativeUI.showWaiting();
+						bb.api_get_data("register_delete_account", _obj, 'post').then(function(rs) {
+							wt.close();
+							ts.get_account();
+						}).catch(function(e){
+							wt.close();
+							console.log(JSON.stringify(e));
+						})
+					}
+				}
+			},
+			watch: {
+
+			},
+			computed: {
+
+			}
+		});
+		
+		var old_back = mui.back;
+		mui.back = function() {
+
+			vm.editable = false;
+			
+			old_back();
+
+		};
+
+	});
+</script>
+</body>
+
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title></title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {
+			background: #fff;
+		}
+		
+		.orderno {
+			padding: 30px 0;
+			text-align: center;
+			font-size: 26px;
+			font-weight: normal;
+		}
+		
+		.orderno~.mui-table-view li {
+			padding: 15px 11px;
+		}
+		
+		.orderno~.mui-table-view li label {
+			padding: 0 0 0 5px;
+		}
+		
+		.notice {
+			display: block;
+			padding: 5px 15px 5px 18px;
+			margin-top: 10px;
+		}
+		
+		.notice span {
+			font-size: 18px;
+		}
+		
+		.notice span.red {
+			font-size: 15px;
+		}
+		
+		#whymemo .mui-content {
+			padding: 15px;
+			border-radius: 10px;
+		}
+		
+		.submit_btn {
+			display: flex;
+			text-align: center; align-items: center; margin-top: 30px;
+		}
+		
+		.submit_btn button {
+			display: block;
+			padding: 8px;
+			margin: 15px 8px;
+		}
+		
+		.submit_btn button#cancel {
+			width: 40vw; margin: 0 auto;
+		}
+		
+		.submit_btn h4 {
+			text-align: center;
+			flex: 1;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">提现订单详情</h1>
+	</header>
+
+	<div class="mui-content">
+
+		<h2 class="orderno">订单号：{{data.orderNo}}</h2>
+
+		<ul class="mui-table-view">
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>订单状态：</label>					
+					<span class="green" v-if="data.status=='waiting'">客服处理中</span>
+					<span class="green" v-if="data.status=='processing'">客服处理中</span>
+					<span class="" v-if="data.status=='done'">已完成</span>
+					<span class="" v-if="data.status=='canceled'">已取消</span>
+					<span class="" v-if="data.status=='abnormal'">订单异常</span>
+				</div>
+			</li>
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>创建时间：<span class="red">* </span></label>
+					<span>{{data.time}}</span>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>提现货币：</label>
+					<span>{{data.buyAsset}}</span>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>提现数量：</label>
+					<span>{{data.buyAssetAmount}}</span>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>支付方式：</label>
+					<span>{{data.sellAsset}}</span>
+				</div>
+			</li>
+
+			<li class="mui-table-view-cell">
+				<div class="mui-input-row">
+					<label>支付金额：</label>
+					<span>{{data.sellAssetAmount}}</span>
+				</div>
+			</li>
+
+
+		</ul>
+
+		
+
+		<div class="mui-content-padded submit_btn">
+			<h4 v-if="data.status=='waiting'">客服正在为您处理，请耐心等待</h4>
+			<h4 v-if="data.status=='processing'">客服正在为您处理，请耐心等待</h4>
+			<h4 v-if="data.status=='done'">订单已完成</h4>
+			<h4 v-if="data.status=='canceled'">订单已取消</h4>
+			<h4 v-if="data.status=='abnormal'">订单异常</h4>
+		</div>
+		
+		<div class="mui-content-padded submit_btn">
+			<button type="button" id="cancel" class="mui-action-back mui-btn mui-btn-block">返回</button>
+		</div>
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+
+		window.addEventListener('get_data', function(e) {
+			vm.get_withdrawdetail(e.detail.id);
+
+		}, false);
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				now_id: '',
+				data: ''
+			},
+			created: function() {
+
+			},
+			methods: {
+				get_withdrawdetail: function(orderNo) {
+					var ts = this;
+					ts.now_id = orderNo;
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						orderNo: orderNo
+					}
+
+					var wt = plus.nativeUI.showWaiting();
+					bb.api_get_data("withdraw_check_order", _obj).then(function(rs) {
+						console.log(JSON.stringify(rs));
+						wt.close();
+						if(!!rs) {
+
+							ts.data = rs.orders[0];
+
+							ts.data.time = translatetime(ts.data.time);
+						}
+					}).catch(function(e) {
+						console.log(JSON.stringify(e));
+					});
+				},
+				submit_recharge: function() {
+					var ts = this;
+
+					var btnArray = ['否', '是'];
+					mui.confirm('确认已汇款？', '', btnArray, function(e) {
+						if(e.index == 1) {
+							dosubmit99();
+						}
+					});
+
+					function dosubmit99() {
+						var _obj = {
+							key: $.getsourcePublicKey(),
+							time: $.getnow(),
+							orderNo: ts.now_id
+						}
+
+						var wt = plus.nativeUI.showWaiting();
+						bb.api_get_data("deposit_confirmed_payment", _obj, 'put').then(function(rs) {
+							console.log(JSON.stringify(rs));
+							wt.close();
+							if(!!rs) {
+								ts.get_withdrawdetail(ts.now_id);
+							}
+						}).catch(function(e) {
+							console.log(JSON.stringify(e));
+						});
+					}
+				},
+				del_recharge: function() {
+					var ts = this;
+
+					var btnArray = ['否', '是'];
+					mui.confirm('确定取消该订单？', '', btnArray, function(e) {
+						if(e.index == 1) {
+							dosubmit99();
+						}
+					});
+
+					function dosubmit99() {
+
+						var _obj = {
+							key: $.getsourcePublicKey(),
+							time: $.getnow(),
+							orderNo: ts.now_id
+						}
+
+						var wt = plus.nativeUI.showWaiting();
+						bb.api_get_data("deposit_cancel_order", _obj, "put").then(function(rs) {
+							console.log(JSON.stringify(rs));
+							wt.close();
+							if(!!rs) {
+								ts.get_withdrawdetail(ts.now_id);
+							}
+						}).catch(function(e) {
+							console.log(JSON.stringify(e));
+						});
+
+					}
+				}
+			}
+		});
+
+		var old_back = mui.back;
+		mui.back = function() {
+
+			vm.data = {};
+			vm.now_id = '';
+			
+			var targetview = plus.webview.getWebviewById("recharge_list.html");
+			mui.fire(targetview, 'reload',{});
+			
+			old_back();
+
+		};
+
+	});
+</script>
+</body>
+
+</html>

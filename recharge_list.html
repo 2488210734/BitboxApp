@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title></title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<style>
+		body,
+		.mui-content {
+			background: #fff;
+		}
+		.mui-content{
+			margin-top: 0;
+		}
+		#list_wrapper{
+			margin-top: 0;
+		}
+		
+		.mui-ios .mui-table-view-chevron {
+			margin-top: 44px;
+		}
+		
+		.order_title {
+			display: flex;
+			padding: 8px 30px 1px 0;
+			background: #fff;
+		}
+		
+		.order_title li {
+			flex: 1;
+			list-style-type: none;
+			text-align: center;
+		}
+		
+		.order_list li {
+			display: flex;
+			padding: 20px 30px 20px 0;
+			list-style-type: none;
+			text-align: center;
+			align-items: center;
+		}
+		
+		.order_list li .col {
+			flex: 1; width: 50%;
+			text-align: center;
+			font-size: 14px;
+		}
+		.order_list li .buyamount{
+			font-size: 20px;
+		}
+		
+		.order_list li:before {
+			content: "";
+			display: block;
+			position: absolute;
+			right: 15px;
+			top: 50%;
+			margin-top: -13px;
+			content: '\e583';
+			font-family: Muiicons;
+		}
+	</style>
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">充值订单记录</h1>
+	</header>
+
+	<div class="mui-content">
+
+		<div class="mui-scroll-wrapper" id="list_wrapper">
+			<div class="mui-scroll">
+				<div class="mui-table-view-chevron">
+
+					<!--<ul class="order_title">
+						<li>金额</li>
+						<li>时间</li>
+						<li>状态</li>
+					</ul>-->
+
+					<ul class="mui-table-view order_list" v-cloak>
+
+						<li class="mui-table-view-cell" v-for="(item,index) in orderlist" @tap="open_detail(item.orderNo)">
+							<div class="col buyamount">￥ {{item.buyAssetAmount}} </div>
+							<div class="col">
+								
+								<span class="red" v-if="item.status=='waiting'">等待处理</span>
+								<span class="green" v-if="item.status=='processing'">客服处理中</span>
+								<span class="" v-if="item.status=='done'">已完成</span>
+								<span class="" v-if="item.status=='canceled'">已取消</span>
+								<span class="" v-if="item.status=='abnormal'">订单异常</span>
+								<div class="time">{{translatetime(item.time)}}</div>
+							</div>
+						</li>
+
+					</ul>
+
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+
+		var detail_page = mui.preload({
+			url: "recharge_content.html"
+		});
+
+		window.addEventListener('reload', function(e) {
+			vm.getfirstpage();
+			mui('#list_wrapper').pullRefresh().scrollTo(0,0);
+		}, false);
+
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				orderlist: []
+
+			},
+			created: function() {
+				this.get_orderlist();
+			},
+			methods: {
+				translatetime: function(creattime) {
+					return translatetime(creattime);
+				},
+				get_orderlist: function(nextdata) { //nextdata不为空则取下一页数据，分页用
+					var ts = this;
+					var dtd = $.Deferred();
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						status: 'all',
+						limit: 15
+					}
+					if(nextdata && ts.orderlist.length > 0) {
+						_obj.cursor = ts.orderlist[ts.orderlist.length - 1].orderNo;
+					}
+
+					bb.api_get_data("deposit_check_order", _obj).then(function(rs) {
+						console.log(JSON.stringify(rs));
+						if(rs && rs.orders.length > 0) {
+
+							if(nextdata && ts.orderlist.length > 0) {
+								//ts.orderlist.push(rs.orders);
+								ts.orderlist = ts.orderlist.concat(rs.orders);
+							} else {
+								ts.orderlist = rs.orders;
+							}
+							dtd.resolve(true); //true为可以继续下拉
+						} else {
+							dtd.resolve();
+						}
+
+					}).catch(function(e) {
+						console.error(JSON.stringify(e));
+						mui.toast('无法获取充值列表');
+					});
+					return dtd.promise();
+				},
+				open_detail: function(id) {
+					plus.webview.show(detail_page, "slide-in-bottom");
+
+					var targetview = plus.webview.getWebviewById("recharge_content.html");
+					mui.fire(targetview, 'get_data', { 'id': id });
+				},
+				getfirstpage: function() {
+					return this.get_orderlist();
+				},
+				getnextpage: function() {
+					return this.get_orderlist(true);
+				}
+			}
+		});
+
+		mui.init({
+			pullRefresh: {
+				container: '#list_wrapper',
+				up: {
+					style:'circle',
+					//height: 50, //可选.默认50.触发上拉加载拖动距离
+					auto: false, //可选,自动上拉加载一次,默认false.
+					contentrefresh: "正在加载中...", //可选，正在加载状态时，上拉加载控件上显示的标题内容
+					contentnomore: '没有更多数据了', //可选，请求完毕若没有更多数据时显示的提醒内容；
+					callback: pullgetdata //必选，刷新函数，根据具体业务来编写，比如通过ajax从服务器获取新数据；
+				},
+				down: {
+					style:'circle',
+					//height: 50, //可选,默认50.触发下拉刷新拖动距离,
+					auto: false, //可选,默认false.首次加载自动下拉刷新一次
+					contentdown: "下拉可以刷新", //可选，在下拉可刷新状态时，下拉刷新控件上显示的标题内容
+					contentover: "释放立即刷新", //可选，在释放可刷新状态时，下拉刷新控件上显示的标题内容
+					contentrefresh: "正在刷新...", //可选，正在刷新状态时，下拉刷新控件上显示的标题内容*/
+					callback: pullgetfirstdata //必选，刷新函数，根据具体业务来编写，比如通过ajax从服务器获取新数据；
+				}
+			}
+		});
+
+		function pullgetfirstdata() {
+			console.log("触发下拉事件");
+			var ts = this;
+			vm.getfirstpage().then(function() {
+				//ts.endPulldownToRefresh(true);
+				 mui('#list_wrapper').pullRefresh().endPulldownToRefresh(); 
+				mui('#list_wrapper').pullRefresh().enablePullupToRefresh(); //下拉刷新完成后要重新启用上拉加载
+				//mui('#effectslist').pullRefresh().endPulldown();
+			});
+		}
+
+
+		function pullgetdata() {
+			//console.log("触发上拉事件");
+			var ts = this;
+			vm.getnextpage().then(function(e) {
+				if(e) {
+					ts.endPullupToRefresh(false);
+				} else {
+					ts.endPullupToRefresh(true);
+				}
+			});
+		}
+
+	});
+</script>
+</body>
+
+</html>

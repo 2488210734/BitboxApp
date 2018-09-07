@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>充值</title>
+	<link href="css/mui.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="css/icons-extra.css" />
+	<link href="css/hx.css" rel="stylesheet" />
+	<link href="css/reg.css" rel="stylesheet" />
+</head>
+
+<body>
+
+<div id="app">
+	<div class="waiting"><span><img src="images/waiting2.svg" alt="正在载入" />正在载入...</span></div>
+
+	<header class="mui-bar mui-bar-nav">
+		<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+		<h1 class="mui-title">注册认证</h1>
+	</header>
+
+	<div class="mui-content">
+		<div class="step1" :class="{'completed': (status != 'unregistered' && status != 'unverified' && status != '')}" v-cloak>
+			<ul class="reglist">
+
+				<li class="mui-col-xs-6">
+					<label for=""><span class="red">*</span>姓：</label>
+					<input type="text" name="" id="xing" v-model="step1.xing" />
+				</li>
+
+				<li class="mui-col-xs-6 alginright">
+					<label for=""><span class="red">*</span>名：</label>
+					<input type="text" name="" id="ming" v-model="step1.ming" />
+				</li>
+
+				<li class="mui-col-xs-12">
+					<label for=""><span class="red">*</span>邮箱：</label>
+					<input type="text" name="" id="email" v-model="step1.email" />
+				</li>
+
+				<li class="mui-col-xs-12 li_email">
+					<label for=""><span class="red">*</span>验证码：</label>
+					<input type="text" name="" id="yzm" v-model="step1.yzm" />
+					<span class="yzm_span mui-icon mui-icon-close-filled mui-hidden"></span>
+					<span class="yzm_span" @tap="getemailcode" v-if="step1.email_sended=='-1'">发送验证码</span>
+					<span class="yzm_span" v-if="step1.email_sended==true">验证码已发送({{step1.email_sended_num}})</span>
+					<span class="yzm_span" @tap="getemailcode" v-if="step1.email_sended==false">重新发送验证码</span>
+				</li>
+			</ul>
+
+			<div class="mui-content-padded submit_btn step1_div">
+				<button type="button" @tap="step1_submit" class="mui-btn mui-btn-primary mui-btn-block btngreen">下一步 >> </button>
+			</div>
+		</div>
+
+		<hr />
+
+		<div class="step2" v-show="status != 'unregistered' && status != 'unverified' && status != ''"  :class="{'completed': status == 'waiting-id-verified'}" v-cloak>
+			<h2>身份证明： <span>请上传三张图片进行认证</span></h2>
+			<ul class="reglist pic_pick">
+				<li>
+					<a>
+						<span class="img"><img @tap="select_gallary('idFront')" :src="step2.idFront" alt="" /></span>
+						<span class="txt">身份证正面</span>
+					</a>
+				</li>
+				<li>
+					<a>
+						<span class="img"><img @tap="select_gallary('idBack')" :src="step2.idBack" alt="" /></span>
+						<span class="txt">身份证背面</span>
+					</a>
+				</li>
+				<li>
+					<a>
+						<span class="img"><img @tap="select_gallary('idHold')" :src="step2.idHold" alt="" /></span>
+						<span class="txt">手持身份证</span>
+					</a>
+				</li>
+
+			</ul>
+
+			<div class="mui-content-padded submit_btn step2_div">
+				<button type="button" @tap="step2_submit" class="mui-btn mui-btn-primary mui-btn-block btngreen">提交认证 >> </button>
+			</div>
+
+		</div>
+		
+		<div class="step3" v-show="status == 'waiting-id-verified'" v-cloak>
+			<div class="mui-card-content">
+			<div class="mui-card-content-inner">
+						我们已收到您提交的资料，请耐心等待工作人员的审核<!--，在此期间，您可以先完善以下资料：-->
+					</div>
+			</div>
+			
+			<!--<ul class="reglist bank_card_ul">
+
+				<li class="mui-col-xs-12">
+					<label for=""><span class="red">*</span>绑定银行卡：</label>
+					<input type="text" name="" id="payeeBankInfo" placeholder="开户银行" v-model="step3.payeeBankInfo" />
+				</li>
+				
+				<li class="mui-col-xs-12">
+					<label for=""><span class="red">*</span>户名：</label>
+					<input type="text" name="" id="PayeeOwner" v-model="step3.PayeeOwner" readonly="readonly" />
+				</li>
+				
+				<li class="mui-col-xs-12">
+					<label for=""><span class="red">*</span>卡号：</label>
+					<input type="text" name="" id="payeeAccount" placeholder="卡号" v-model="step3.payeeAccount" />
+				</li>
+				
+			</ul>-->
+			
+			
+		</div>
+		
+		
+
+	</div>
+
+</div>
+<script src="_config/cs.js"></script>
+<script src="libs/bower_components/stellar-sdk/stellar-sdk.js"></script>
+<script src="js/gateways.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/sjcl.js"></script>
+<script src="js/nacl.js"></script>
+<script src="js/nacl-util.min.js"></script>
+<script src="js/ed2curve.min.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/function.js"></script>
+<script src="js/hx.js"></script>
+<script src="js/bitbox.js"></script>
+<script>
+	mui.plusReady(function() {
+		$.checkuser();
+		var server = new StellarSdk.Server($.apiaddress);
+		var vm = new Vue({
+			el: '#app',
+			data: {
+				status: "",
+				step1: {
+					email_sended: '-1',
+					email_sended_num: 120,
+					xing: '',
+					ming: '',
+					email: '',
+					yzm: ''
+				},
+				step2: {
+					idFront: '',
+					idBack: '',
+					idHold: ''
+				},
+				step3: {
+					payeeBankInfo: '',
+					PayeeOwner: '',
+					payeeAccount: ''
+				}
+
+			},
+			created: function() {
+				this.get_state();
+			},
+			methods: {
+				get_state: function() { //获取当前注册进度
+					var ts = this;
+					var wt=plus.nativeUI.showWaiting();
+					bb.isuser().then(function(rs) {
+						console.log(JSON.stringify(rs));
+						wt.close();
+						ts.status = rs.verificationStatus;
+
+						/*已认证则填充已填写的资料*/
+						if(ts.status != "unregistered" && ts.status != "unverified") {
+							ts.step1.xing = rs.surname;
+							ts.step1.ming = rs.firstname;
+							ts.step1.email = rs.email;
+							ts.step1.yzm = "****";
+
+						}
+
+					}).catch(function(e) {
+						console.log(JSON.stringify(e));
+						wt.close();
+					})
+				},
+				getemailcode: function() {
+
+					var ts = this;
+					if(ts.step1.email_sended == true) {
+						return false;
+					}
+
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						email: ts.step1.email
+					}
+
+					bb.api_get_data("register_code", _obj, "post").then(function(rs) {
+
+						if(rs.result == true) {
+							ts.step1.email_sended = true;
+
+							window.daojishi = function() {
+								ts.step1.email_sended_num -= 1;
+								if(ts.step1.email_sended_num > 0) {
+									window.setTimeout("daojishi()", 1000);
+								} else {
+									ts.step1.email_sended = false;
+								}
+							}
+							window.daojishi();
+						}
+					}).catch(function(e) {
+						console.log(JSON.stringify(e));
+					})
+				},
+
+				step1_submit: function() {
+					var ts = this;
+					var xing = ts.step1.xing;
+					var ming = ts.step1.ming;
+					var email = ts.step1.email;
+					var yzm = ts.step1.yzm;
+
+					var _obj = {
+						key: $.getsourcePublicKey(),
+						time: $.getnow(),
+						email: email,
+						verificationCode: yzm,
+						surname: xing,
+						firstName: ming
+					}
+
+					bb.api_get_data("register_name_email", _obj, "post").then(function(rs) {
+						ts.get_state(); //第一步完成，更新状态
+					}).catch(function(e) {
+						console.error(e);
+					});
+
+				},
+				select_gallary: function(target_id) {
+					var ts = this;
+					plus.gallery.pick(function(path) {
+						ts.step2[target_id] = path;
+					});
+				},
+				step2_submit: function() {
+					var ts = this;
+					if(!!ts.step2.idFront && !!ts.step2.idBack && !!ts.step2.idHold) {
+						var btnArray = ['否', '是'];
+						mui.confirm('提示：提交后将由工作人员审核证件的真实性(提交后无法修改)', '是否要提交这三张图片？', btnArray, function(e) {
+							if(e.index == 1) {
+								submitstep2();
+							} else {
+								
+							}
+						});
+
+						function submitstep2() {
+							var api_url = $.server_address + "register_photo?";
+							var _obj = {
+								key: $.getsourcePublicKey(),
+								time: $.getnow()
+							}
+							var sign_str = bb.objtosigned(_obj);
+							//var wt=plus.nativeUI.showWaiting();
+
+							var task = plus.uploader.createUpload(api_url + sign_str, { method: "POST" },
+								function(t, status) { //上传完成
+									if(status == 200) {
+										ts.get_state(); //第二步完成，更新状态
+									} else {
+										//alert("上传失败：" + status);
+										console.log(JSON.stringify(t.responseText));
+										console.log(JSON.stringify(status));
+										//wt.close(); //关闭等待提示按钮
+									}
+								}
+							);
+							//添加其他参数
+							//task.addData("name", "test");
+							task.addFile(ts.step2.idFront, { key: "idFront" });
+							task.addFile(ts.step2.idBack, { key: "idBack" });
+							task.addFile(ts.step2.idHold, { key: "idHold" });
+							task.start();
+						}
+
+					}
+
+					//wt.close();
+				}
+
+			},
+			watch: {
+
+			}
+		});
+
+		/*$(".pic_pick").on('tap','img',function(){
+			var ts = $(this);			
+			plus.gallery.pick(function(path){
+				ts.attr("src",path);
+           });			
+		});*/
+
+	});
+</script>
+</body>
+
+</html>
